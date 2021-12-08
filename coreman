@@ -1,0 +1,55 @@
+.\" Manpage for core.
+.\" Contact rouhiermax@cy-tech.fr or taalbibila@cy-tech.fr to correct errors or typos.
+.TH core 0 "05 Dec 2021" "1.0" "core man page"
+.SH NAME
+core \- example of virtual core 
+.SH SYNOPSIS
+.B core 
+[
+.B -v
+]
+[ 
+.B -h
+] 
+.I code_file
+.I state_file
+.SH DESCRIPTION
+.B core
+is an executable file able to run an up-to-date 64 bits Debian distribution. The core is composed of three main functions
+.B fetch
+,
+.B decode
+and 
+.B execute.
+.RE
+  
+.RE
+.B Fetch 
+reads the instruction from the code and compute the new value of the PC.
+.RE
+.B Decode
+decode the different parts from the instruction.
+.RE
+.B Execute
+realize the operations. 
+.SH OPTIONS
+.IP -h 
+Display this manual.
+.IP -v 
+Enable verbose mode. 
+.SH FILES
+.I code_file
+.RS 
+It specifies the code to be executed by the core (MANDATORY)
+.RE
+.I state_file
+.RS 
+It specifies the initial state of the internal registers (MANDATORY)
+.SH BUGS
+No known bugs.
+.SH EXAMPLE
+ ./core -v code state
+.SH SEE MORE
+consignes.pdf
+.SH AUTHORS
+Bilal Taalbi (taalbibila@cy-tech.fr) & Maxime Rouhier (rouhiermax@cy-tech.fr)
