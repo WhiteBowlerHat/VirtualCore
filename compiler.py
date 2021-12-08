@@ -47,13 +47,13 @@ def instr_handler_op(iv,dest_r,s_op,f_op,op,ivf):
     binary = iv << 0 | dest_r << 8 | s_op << 12 | f_op << 16 | op << 20 | ivf << 24
     print(bin(binary))
     print(binary)
-    return struct.pack('<I',binary)
+    return struct.pack('>I',binary)
 
 def instr_handler_branch(offset,bcc):
     binary = offset << 0 | bcc << 28
     print(bin(binary))
     print(binary)
-    return struct.pack('<I',binary)
+    return struct.pack('>I',binary)
 
 def main(filename):
     file = open(filename,"r")

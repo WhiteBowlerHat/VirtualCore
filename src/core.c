@@ -5,6 +5,7 @@
    Last update : 08/12/2021
  
 */
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -14,6 +15,25 @@
 #include <math.h>
 #include <inttypes.h>
 
+unsigned long int** stateFileHandler(char* file, unsigned int* ptr){
+  FILE *fp;
+  
+  unsigned int length;
+  FILE * f = fopen (file, "r");
+  if (f) {
+    //Retrieve length
+    fseek (f, 0, SEEK_END);
+    length = ftell(f);
+    rewind(f);
+    char buffer[length];
+    int count = fread(&buffer, sizeof(char), length, f);
+    fclose(f);
+    // Printing data to check validity
+    //printf("Data read from file: %s \n", buffer);
+    //printf("Elements read: %d", count);
+  }
+}
+
 
 uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   FILE *fp;
@@ -22,25 +42,26 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   unsigned int length;
   //Open file as binary
   FILE * f = fopen (file, "rb");
-  if (f)
-  { 
+  if (f) { 
     //Retrieve length
     fseek (f, 0, SEEK_END);
     length = ftell(f);
-    printf("%d\n",length);
     rewind(f);
     //Get file content
     buffer = (uint32_t*) malloc (length);
-    if (buffer)
-    {
-        fread (buffer, length, 1, f);
+    if (buffer) {
+      fread (buffer, length, 1, f);
     }
     //Update size
     *ptr = length/4;
     fclose (f);
+    printf("%x\n",buffer[0]);
+    return buffer; 
+  } else {
+    printf("Invalid binary file !");
+    *ptr = -1;
+    return EXIT_SUCCESS;
   }
-
-  return buffer;
 }
 
 void fetch(char* code , char* state){
@@ -51,9 +72,10 @@ void fetch(char* code , char* state){
   unsigned int* sptr_size = &state_size;
 
   //Retrieve code file content and update size
-  uint32_t * arr = codeFileHandler(code, cptr_size);
-  printf("%x\n",arr[0]);
-  printf("%d\n",code_size);
+  uint32_t * int_instr = codeFileHandler(code, cptr_size);
+  //uint32_t * reg_val = stateFileHandler(state, sptr_size);
+  printf("%x\n",int_instr[1]);
+  //printf("%d\n",code_size);
   printf("Fetch end\n");
 }
 
