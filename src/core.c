@@ -27,23 +27,64 @@ uint32_t SwapEndian(uint32_t num){
   return res = b0 | b1 | b2 | b3;
 }
 
-unsigned long int** stateFileHandler(char* file, unsigned int* ptr){
-  FILE *fp;
+int digit_to_int(char d)
+{
+ char str[2];
+
+ str[0] = d;
+ str[1] = '\0';
+ return (int) strtol(str, NULL, 10);
+}
+
+
+unsigned long* stateFileHandler(char* file, unsigned int* ptr){
+  FILE * fp;
+  char * line = NULL;
   
-  unsigned int length;
-  FILE * f = fopen (file, "r");
-  if (f) {
-    //Retrieve length
-    fseek (f, 0, SEEK_END);
-    length = ftell(f);
-    rewind(f);
-    char buffer[length];
-    int count = fread(&buffer, sizeof(char), length, f);
-    fclose(f);
-    // Printing data to check validity
-    //printf("Data read from file: %s \n", buffer);
-    //printf("Elements read: %d", count);
+  size_t len = 0;
+  ssize_t read;
+  int length=0;
+  int j=0;
+  char *subString;
+  unsigned long* res;
+  
+
+  
+  fp = fopen(file, "r");
+  if (fp == NULL)
+      exit(EXIT_FAILURE);
+  //Retrieve length
+  fseek (fp, 0, SEEK_END);
+  length = ftell(fp);
+  rewind(fp);
+  res = (unsigned long*) malloc (length);
+ 
+  while ((read = getline(&line, &len, fp)) != -1) { 
+    if (line[0]=='r'){
+      if (line[2]=='='){
+        int k=digit_to_int(line[1]);
+        printf("Retrieved line of length %zu:\n", read);
+        printf("%s",line);
+        if (k>-1 || k<10){
+          char linex[len];
+          strcpy(linex, line);
+          subString = strtok(linex,"x"); // find the x
+          subString = strtok(NULL,"\n");   // find the \n
+          res[j] = (int)strtol(subString, NULL, 16);;
+          printf("v=%lx\n", res[j]);
+          j=j+1;
+        }
+      } else {
+        printf("Retrieved line of length %zu:\n", read);
+        printf("%d\n", digit_to_int(line[1])*10+digit_to_int(line[2]));
+      }
+    }
   }
+
+  fclose(fp);
+  if (line)
+      free(line);
+  exit(EXIT_SUCCESS);
 }
 
 
@@ -67,6 +108,9 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
     //Update size
     *ptr = length/4;
     fclose (f);
+    for (int i = 0; i < length/4; i++) {
+      buffer[i] = SwapEndian(buffer[i]);
+    }
     return buffer; 
   } else {
     printf("Invalid binary file !");
@@ -84,10 +128,10 @@ void fetch(char* code , char* state){
 
   //Retrieve code file content and update size
   uint32_t * int_instr = codeFileHandler(code, cptr_size);
-  //uint32_t * reg_val = stateFileHandler(state, sptr_size);
   printf("%x\n",int_instr[1]);
-  printf("%x\n", SwapEndian(int_instr[1]));
-  //printf("%d\n",code_size);
+  
+  //Retrieve state file content and initialize registers
+  unsigned long* registeries = stateFileHandler(state, sptr_size);
   printf("Fetch end\n");
 }
 
