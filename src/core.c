@@ -2,7 +2,7 @@
 
    Example of Virtual Core 
    Authors:  Bilal Taalbi & Maxime Rouhier
-   Last update : 08/12/2021
+   Last update : 09/12/2021
  
 */
 #define _GNU_SOURCE
@@ -14,6 +14,18 @@
 #include <unistd.h>
 #include <math.h>
 #include <inttypes.h>
+
+uint32_t SwapEndian(uint32_t num){
+  uint32_t b0,b1,b2,b3;
+  uint32_t res;
+
+  b0 = (num & 0x000000ff) << 24u;
+  b1 = (num & 0x0000ff00) << 8u;
+  b2 = (num & 0x00ff0000) >> 8u;
+  b3 = (num & 0xff000000) >> 24u;
+
+  return res = b0 | b1 | b2 | b3;
+}
 
 unsigned long int** stateFileHandler(char* file, unsigned int* ptr){
   FILE *fp;
@@ -55,7 +67,6 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
     //Update size
     *ptr = length/4;
     fclose (f);
-    printf("%x\n",buffer[0]);
     return buffer; 
   } else {
     printf("Invalid binary file !");
@@ -75,6 +86,7 @@ void fetch(char* code , char* state){
   uint32_t * int_instr = codeFileHandler(code, cptr_size);
   //uint32_t * reg_val = stateFileHandler(state, sptr_size);
   printf("%x\n",int_instr[1]);
+  printf("%x\n", SwapEndian(int_instr[1]));
   //printf("%d\n",code_size);
   printf("Fetch end\n");
 }
