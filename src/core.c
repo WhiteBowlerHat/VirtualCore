@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <core.h>
+//#include <core.h>
 #include <unistd.h>
 #include <math.h>
 #include <inttypes.h>
@@ -57,30 +57,47 @@ unsigned long* stateFileHandler(char* file, unsigned int* ptr){
   fseek (fp, 0, SEEK_END);
   length = ftell(fp);
   rewind(fp);
+  //Update size
+  *ptr = length;
   res = (unsigned long*) malloc (length);
  
   while ((read = getline(&line, &len, fp)) != -1) { 
     if (line[0]=='r'){
       if (line[2]=='='){
         int k=digit_to_int(line[1]);
-        printf("Retrieved line of length %zu:\n", read);
-        printf("%s",line);
+        //printf("Retrieved line of length %zu:\n", read);
+        //printf("%s",line);
         if (k>-1 || k<10){
           char linex[len];
           strcpy(linex, line);
           subString = strtok(linex,"x"); // find the x
           subString = strtok(NULL,"\n");   // find the \n
-          res[j] = (int)strtol(subString, NULL, 16);;
-          printf("v=%lx\n", res[j]);
+          res[j] = (int)strtol(subString, NULL, 16);
+        // printf("v=%lx\n", res[j]);
           j=j+1;
         }
-      } else {
-        printf("Retrieved line of length %zu:\n", read);
-        printf("%d\n", digit_to_int(line[1])*10+digit_to_int(line[2]));
+      } else if (line[3]=='='){
+        int k=digit_to_int(line[1]);
+        //printf("Retrieved line of length %zu:\n", read);
+        //printf("%s",line);
+        if (k>-1 || k<10){
+          char linex[len];
+          strcpy(linex, line);
+          subString = strtok(linex,"x"); // find the x
+          subString = strtok(NULL,"\n");   // find the \n
+          res[j] = (int)strtol(subString, NULL, 16);
+         // printf("v=%lx\n", res[j]);
+          j=j+1;
+        }
       }
+    } else {
+      //printf("Retrieved line of length %zu:\n", read);
+      //printf("%d\n", digit_to_int(line[1])*10+digit_to_int(line[2]));
     }
   }
-
+  
+ 
+  return res;
   fclose(fp);
   if (line)
       free(line);
@@ -119,7 +136,28 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   }
 }
 
-void fetch(char* code , char* state){
+void fetch(uint32_t instr, int verbose, long pc){
+  //printf("%x\n",instr);
+  uint8_t bcc = (instr & 0xf0000000)/ 0x10000000;
+  printf("%x\n", bcc);
+}
+
+void decode(){
+  printf("--- Decode begin ---\n");
+  
+  printf("--- Decode end ---\n");
+}
+
+void execute(){
+  printf("--- Execute begin ---\n");
+  
+  printf("--- Execute end ---\n");
+}
+
+
+void core(char* code , char* state, int verbose){
+  //Declare PC
+  long pc = 0;
   //Declare size for file contents
   unsigned int code_size = 0;
   unsigned int* cptr_size = &code_size;
@@ -128,18 +166,24 @@ void fetch(char* code , char* state){
 
   //Retrieve code file content and update size
   uint32_t * int_instr = codeFileHandler(code, cptr_size);
-  printf("%x\n",int_instr[1]);
+  //printf("%x\n",int_instr[1]);
   
   //Retrieve state file content and initialize registers
   unsigned long* registeries = stateFileHandler(state, sptr_size);
-  printf("Fetch end\n");
+  //printf("%lx\n",registeries[15]);
+  for (int i = 0; i < *cptr_size; i++ ){
+    printf("Instruction %d | Fetch :", i);
+    fetch(int_instr[i],verbose,pc);
+  }
+
 }
 
-void decode(){
-}
 
-void execute(){
-}
+
+
+
+
+
 
 int isInArray(char *arr[],char *x, int arrLen){
   int isElementPresent = 0;
@@ -164,9 +208,10 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1],"-v")==0) {
       // Check if files exist
       if ((access(argv[2],F_OK) == 0) && (access(argv[3],F_OK) == 0)){
-        printf("Starting C program with verbose mode...\n");
+        printf("----\nStarting C program with verbose mode...\n");
+        core(argv[1],argv[2],1);
       } else {
-        printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Does't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
+        printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
       }
     } else {
      printf("Invalid usage of \"./core\".\nTry \"./core -h\" for more information \n");
@@ -175,9 +220,9 @@ int main(int argc, char *argv[])
     // Check if files exist
     if ((access(argv[1],F_OK) == 0) && (access(argv[2],F_OK) == 0)){
       printf("----\nStarting C program...\n");
-      fetch(argv[1],argv[2]);
+      core(argv[1],argv[2],0);
     } else {
-      printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[1],F_OK) == 0) ? "Exists" : "Does't exist", (access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist" );
+      printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[1],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist" );
     }
   } else {
     printf("Invalid usage\nTry \"./core -h\" for more information. \n");
