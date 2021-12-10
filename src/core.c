@@ -163,15 +163,15 @@ void fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
     *pc = *pc+ipow((-1),n)*off;
   } else if ((bcc == 9) && (*c1 == *c2)){
     *pc = *pc+ipow((-1),n)*off;
-  } else if ((bcc == 0xa) && (*c1 != *c2)){
+  } else if ((bcc == 10) && (*c1 != *c2)){
     *pc = *pc+ipow((-1),n)*off;
-  } else if ((bcc == 0xb) && (*c1 <= *c2)){
+  } else if ((bcc == 11) && (*c1 <= *c2)){
     *pc = *pc+ipow((-1),n)*off;
-  } else if ((bcc == 0xc) &&  (*c1 >= *c2)){
+  } else if ((bcc == 12) &&  (*c1 >= *c2)){
     *pc = *pc+ipow((-1),n)*off;
-  } else if ((bcc == 0xd) && (*c1 < *c2)){
+  } else if ((bcc == 13) && (*c1 < *c2)){
     *pc = *pc+ipow((-1),n)*off;
-  } else if ((bcc == 0xe) && (*c1 > *c2)) {
+  } else if ((bcc == 14) && (*c1 > *c2)) {
     *pc = *pc+ipow((-1),n)*off;
   } else if (bcc == 8) {
     *pc = *pc+1;
@@ -179,14 +179,25 @@ void fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
     *pc = *pc+1;
   }
   if (verbose == 1){
-    printf("BCC : %x; Offset: %lx ; PC : %ld", bcc, off, *pc);
+    printf("BCC : %x; PC: %ld ; Offset : %lx", bcc,*pc,  off);
   }
 }
 
-void decode(){
-  printf("--- Decode begin ---\n");
-  
-  printf("--- Decode end ---\n");
+uint32_t* decode(uint32_t instr, int verbose){
+  uint32_t* arr;
+  uint32_t bcc = (instr & 0xf0000000) /10000000;
+  uint32_t off = (instr & 0x07ffffff);
+  uint32_t ivf = (instr & 0x01000000) /1000000;
+  uint32_t opcode = (instr & 0x00f00000) /100000;
+  uint32_t first_op = (instr & 0x000f0000) /10000;
+  uint32_t second_op = (instr & 0x0000f000) /1000;
+  uint32_t dest_reg = (instr & 0x00000f00) /100;
+  uint32_t iv = (instr & 0x000000ff);
+  if (bcc != 0) {
+    arr = (uint32_t*) malloc(2); 
+  } else {
+
+  }
 }
 
 void execute(){
@@ -218,11 +229,11 @@ void core(char* code , char* state, int verbose){
   //Retrieve state file content and initialize registers
   unsigned long* registeries = stateFileHandler(state, sptr_size);
   //printf("%lx\n",registeries[15]);
-  for (int i = 0; i < *cptr_size; i++ ){
+  while (*ptr_pc != *cptr_size ){
     if (verbose == 1){
-      printf("Instruction %d | Fetch :", i);
+      printf("Instruction %ld | Fetch :", *ptr_pc);
     }
-    fetch(int_instr[i],verbose,ptr_pc,ptr_c1,ptr_c2);
+    fetch(int_instr[*ptr_pc],verbose,ptr_pc,ptr_c1,ptr_c2);
     if (verbose == 1){
       printf("\n");
     }
