@@ -80,12 +80,20 @@ long* stateFileHandler(char* file, unsigned int* ptr){
   if (fp == NULL)
       exit(EXIT_FAILURE);
   //Retrieve length
-  fseek (fp, 0, SEEK_END);
-  length = ftell(fp);
-  rewind(fp);
+  int ch=0;
+  int lines=0;
+  while(!feof(fp))
+  {
+    ch = fgetc(fp);
+    if(ch == '\n')
+    {
+      length++;
+    }
+  }
   //Update size
   *ptr = length;
-  res = (long*) malloc (length);
+  printf("%d", length);
+  res = (long*) malloc (length*sizeof(long));
  
   while ((read = getline(&line, &len, fp)) != -1) { 
     if (line[0]=='r'){
@@ -120,10 +128,16 @@ long* stateFileHandler(char* file, unsigned int* ptr){
       //printf("Retrieved line of length %zu:\n", read);
       //printf("%d\n", digit_to_int(line[1])*10+digit_to_int(line[2]));
     }
+    
   }
   
- 
+  printf("Registeries : [" );
+    for (int i =0 ; i<=length; i++){
+      printf("r%d=%lx; ", i, res[i]);
+    }
+    printf("]\n");
   return res;
+  
   fclose(fp);
   if (line)
       free(line);
@@ -210,14 +224,14 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
     if (verbose == 1)
     printf("BCC : %x; Offset %x", bcc, off);
   } else {*/
-    arr = (uint32_t*) calloc(7,sizeof(uint32_t)); 
+    arr = (uint32_t*) calloc(8,sizeof(uint32_t)); 
     arr[0] = ivf;
     arr[1] = opcode;
     arr[2] = first_op;
-    arr[4] = second_op;
-    arr[5] = dest_reg;
-    arr[6] = iv;
-    arr[7] = bcc;
+    arr[3] = second_op;
+    arr[4] = dest_reg;
+    arr[5] = iv;
+    arr[6] = bcc;
     if (verbose == 1)
     if (bcc != 0){
       printf("BCC : %x; Offset %x", bcc, off);
@@ -229,9 +243,46 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
   //}
   
 }
-
-void execute(uint32_t* decoded_instr, long* registeries){
-
+    
+void execute(uint32_t* decoded_instr, long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size){
+  long temp;
+  
+  /*if (decoded_instr[0] == 0 ){
+    temp = registeries[decoded_instr[3]];
+  } else {
+    temp = registeries[decoded_instr[5]];
+  }
+  if (decoded_instr[6] == 0){
+      if (decoded_instr[1]==0) {
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] && temp);
+      } else if (decoded_instr[1] == 1 ) {
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] || temp);
+      } else if (decoded_instr[1] == 2 ) {
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] || temp);
+      } else if (decoded_instr[1] == 3 ) {
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] + temp);
+      } else if (decoded_instr[1] == 4 ) {
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] + temp + *carry);
+      } else if (decoded_instr[1] == 5 ) {
+         *c1=registeries[decoded_instr[2]];
+         *c2=temp;
+      } else if (decoded_instr[1] == 6 ){
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] - temp);
+      } else if (decoded_instr[1] == 7 ){
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] - temp + *carry -1);
+      } else if (decoded_instr[1] == 8 ){
+         registeries[decoded_instr[5]]= registeries[decoded_instr[2]];
+      } else if (decoded_instr[1] == 9 ){
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] << temp);
+      } else if (decoded_instr[1] == 10 ){
+         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] >> temp);
+      }
+    } 
+    printf("Registeries : [" );
+    for (int i =0 ; i<=*sptr_size; i++){
+      printf("r%d :%lx ;", i, registeries[i]);
+    }
+    printf("]\n");*/
 }
 
 
@@ -249,7 +300,9 @@ void core(char* code , char* state, int verbose){
   unsigned int* cptr_size = &code_size;
   unsigned int state_size = 0;
   unsigned int* sptr_size = &state_size;
-  //
+  //Declare carry
+  long carry = 0;
+  long* ptr_carry = &carry;
   uint32_t current_instr;
   
   //Retrieve code file content and update size
@@ -258,9 +311,9 @@ void core(char* code , char* state, int verbose){
   
   //Retrieve state file content and initialize registers
   long* registeries = stateFileHandler(state, sptr_size);
+  uint32_t* decoded_instr;
   //printf("%lx\n",registeries[15]);
-  while (*ptr_pc != *cptr_size ){
-    uint32_t* decoded_instr;
+  while (*ptr_pc != *cptr_size-1 ){
     if (verbose == 1)
       printf("Fetch :");
     current_instr = fetch(int_instr[*ptr_pc],verbose,ptr_pc,ptr_c1,ptr_c2);
@@ -273,7 +326,7 @@ void core(char* code , char* state, int verbose){
       printf("\n");
     if (verbose == 1)
       printf("Execute :");
-    execute(decoded_instr,registeries);
+    execute(decoded_instr,registeries,ptr_carry, ptr_c1,ptr_c2,sptr_size);
     if (verbose == 1)
       printf("\n---\n");
   }
