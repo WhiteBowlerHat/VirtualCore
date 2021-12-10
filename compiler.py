@@ -1,6 +1,3 @@
-# Example of compiler for custom virtual core with custom instructions 
-# Authors: Bilal Taalbi & Maxime Rouhier
-# Last update : 08/12/2021
 import binascii
 import sys
 import struct
@@ -44,13 +41,22 @@ dict_branch = {"B":8,
 
 def instr_handler_op(iv,dest_r,s_op,f_op,op,ivf):
     binary = 0
+    if iv > 255:
+        return("Error Immediate Value too high")
     binary = iv << 0 | dest_r << 8 | s_op << 12 | f_op << 16 | op << 20 | ivf << 24
     print(bin(binary))
     print(binary)
     return struct.pack('>I',binary)
 
 def instr_handler_branch(offset,bcc):
-    binary = offset << 0 | bcc << 28
+    if offset >= 0 :
+        signe = 0
+    elif offset < 0:
+        offset = abs(offset)
+        signe = 1
+    if abs(offset) > 134217727:
+        return("Error Offset too high for branch")
+    binary = offset << 0 | signe << 27 | bcc << 28
     print(bin(binary))
     print(binary)
     return struct.pack('>I',binary)
@@ -83,7 +89,11 @@ def main(filename):
                 else:
                     instr = instr_handler_op(int(s[2]),dict_register[s[1]],0,0,op,1)
         elif s[0].upper() in dict_branch:
+            print(s)
+            print(int(s[1]))
             instr = instr_handler_branch(int(s[1]), dict_branch[s[0]])
+        if isinstance(instr, str):
+            return(print(instr))
         binary_file.write(instr)
     binary_file.close()
 

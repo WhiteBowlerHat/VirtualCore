@@ -1,0 +1,4 @@
+CMP r1 2
+BLE 2
+MOV r1, 20
+ADD r1, r1, 10

@@ -27,6 +27,23 @@ uint32_t SwapEndian(uint32_t num){
   return res = b0 | b1 | b2 | b3;
 }
 
+long ipow(long base, long exp)
+{
+    long result = 1;
+    for (;;)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        if (!exp)
+            break;
+        base *= base;
+    }
+
+    return result;
+}
+
+
 int digit_to_int(char d)
 {
  char str[2];
@@ -47,9 +64,7 @@ unsigned long* stateFileHandler(char* file, unsigned int* ptr){
   int j=0;
   char *subString;
   unsigned long* res;
-  
 
-  
   fp = fopen(file, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
@@ -136,10 +151,36 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   }
 }
 
-void fetch(uint32_t instr, int verbose, long pc){
+void fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
   //printf("%x\n",instr);
   uint8_t bcc = (instr & 0xf0000000)/ 0x10000000;
-  printf("%x\n", bcc);
+  long off = (instr & 0x07ffffff);
+  //off = off >> 21;
+  uint8_t flag = (instr & 0x0f000000)/ 0x1000000;
+
+  int n = flag>>3;
+  if (bcc == 8){
+    *pc = *pc+ipow((-1),n)*off;
+  } else if ((bcc == 9) && (*c1 == *c2)){
+    *pc = *pc+ipow((-1),n)*off;
+  } else if ((bcc == 0xa) && (*c1 != *c2)){
+    *pc = *pc+ipow((-1),n)*off;
+  } else if ((bcc == 0xb) && (*c1 <= *c2)){
+    *pc = *pc+ipow((-1),n)*off;
+  } else if ((bcc == 0xc) &&  (*c1 >= *c2)){
+    *pc = *pc+ipow((-1),n)*off;
+  } else if ((bcc == 0xd) && (*c1 < *c2)){
+    *pc = *pc+ipow((-1),n)*off;
+  } else if ((bcc == 0xe) && (*c1 > *c2)) {
+    *pc = *pc+ipow((-1),n)*off;
+  } else if (bcc == 8) {
+    *pc = *pc+1;
+  } else {
+    *pc = *pc+1;
+  }
+  if (verbose == 1){
+    printf("BCC : %x; Offset: %lx ; PC : %ld", bcc, off, *pc);
+  }
 }
 
 void decode(){
@@ -158,6 +199,12 @@ void execute(){
 void core(char* code , char* state, int verbose){
   //Declare PC
   long pc = 0;
+  long * ptr_pc = &pc;
+  //Declare compare memory values
+  long c1 = 0;
+  long * ptr_c1 = &c1;
+  long c2 = 1;
+  long * ptr_c2 = &c2;
   //Declare size for file contents
   unsigned int code_size = 0;
   unsigned int* cptr_size = &code_size;
@@ -172,18 +219,16 @@ void core(char* code , char* state, int verbose){
   unsigned long* registeries = stateFileHandler(state, sptr_size);
   //printf("%lx\n",registeries[15]);
   for (int i = 0; i < *cptr_size; i++ ){
-    printf("Instruction %d | Fetch :", i);
-    fetch(int_instr[i],verbose,pc);
+    if (verbose == 1){
+      printf("Instruction %d | Fetch :", i);
+    }
+    fetch(int_instr[i],verbose,ptr_pc,ptr_c1,ptr_c2);
+    if (verbose == 1){
+      printf("\n");
+    }
   }
 
 }
-
-
-
-
-
-
-
 
 int isInArray(char *arr[],char *x, int arrLen){
   int isElementPresent = 0;
@@ -209,7 +254,7 @@ int main(int argc, char *argv[])
       // Check if files exist
       if ((access(argv[2],F_OK) == 0) && (access(argv[3],F_OK) == 0)){
         printf("----\nStarting C program with verbose mode...\n");
-        core(argv[1],argv[2],1);
+        core(argv[2],argv[3],1);
       } else {
         printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
       }
