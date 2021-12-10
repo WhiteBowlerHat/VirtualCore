@@ -27,6 +27,18 @@ uint32_t SwapEndian(uint32_t num){
   return res = b0 | b1 | b2 | b3;
 }
 
+int isInArray(char *arr[],char *x, int arrLen){
+  int isElementPresent = 0;
+     
+  for (int i = 0; i < arrLen; i++) {
+      if (strcmp(arr[i],x)==0) {
+          isElementPresent = 1;
+          break;
+      }
+  }
+  return isElementPresent;
+}
+
 long ipow(long base, long exp)
 {
     long result = 1;
@@ -47,14 +59,13 @@ long ipow(long base, long exp)
 int digit_to_int(char d)
 {
  char str[2];
-
  str[0] = d;
  str[1] = '\0';
  return (int) strtol(str, NULL, 10);
 }
 
 
-unsigned long* stateFileHandler(char* file, unsigned int* ptr){
+long* stateFileHandler(char* file, unsigned int* ptr){
   FILE * fp;
   char * line = NULL;
   
@@ -63,7 +74,7 @@ unsigned long* stateFileHandler(char* file, unsigned int* ptr){
   int length=0;
   int j=0;
   char *subString;
-  unsigned long* res;
+  long* res;
 
   fp = fopen(file, "r");
   if (fp == NULL)
@@ -74,7 +85,7 @@ unsigned long* stateFileHandler(char* file, unsigned int* ptr){
   rewind(fp);
   //Update size
   *ptr = length;
-  res = (unsigned long*) malloc (length);
+  res = (long*) malloc (length);
  
   while ((read = getline(&line, &len, fp)) != -1) { 
     if (line[0]=='r'){
@@ -151,7 +162,7 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   }
 }
 
-void fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
+uint32_t fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
   //printf("%x\n",instr);
   uint8_t bcc = (instr & 0xf0000000)/ 0x10000000;
   long off = (instr & 0x07ffffff);
@@ -181,11 +192,11 @@ void fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
   if (verbose == 1){
     printf("BCC : %x; PC: %ld ; Offset : %lx", bcc,*pc,  off);
   }
+  return instr;
 }
 
-uint32_t* decode(uint32_t instr, int verbose){
-  uint32_t* arr;
-  uint32_t bcc = (instr & 0xf0000000) /10000000;
+void decode(uint32_t instr, int verbose, uint32_t* arr){
+  uint32_t bcc = (instr & 0xf0000000)/ 0x10000000;
   uint32_t off = (instr & 0x07ffffff);
   uint32_t ivf = (instr & 0x01000000) /1000000;
   uint32_t opcode = (instr & 0x00f00000) /100000;
@@ -193,17 +204,34 @@ uint32_t* decode(uint32_t instr, int verbose){
   uint32_t second_op = (instr & 0x0000f000) /1000;
   uint32_t dest_reg = (instr & 0x00000f00) /100;
   uint32_t iv = (instr & 0x000000ff);
-  if (bcc != 0) {
-    arr = (uint32_t*) malloc(2); 
-  } else {
-
-  }
+  /*if (bcc != 0) {
+    arr = (uint32_t*) calloc(6,sizeof(uint32_t));
+    printf("ivf : %x; opcode : %x; first_op : %x; second_op : %x; dest_reg : %x; iv : %x", ivf,opcode, first_op, second_op, dest_reg, iv);
+    if (verbose == 1)
+    printf("BCC : %x; Offset %x", bcc, off);
+  } else {*/
+    arr = (uint32_t*) calloc(7,sizeof(uint32_t)); 
+    arr[0] = ivf;
+    arr[1] = opcode;
+    arr[2] = first_op;
+    arr[4] = second_op;
+    arr[5] = dest_reg;
+    arr[6] = iv;
+    arr[7] = bcc;
+    if (verbose == 1)
+    if (bcc != 0){
+      printf("BCC : %x; Offset %x", bcc, off);
+    } else {
+      printf("ivf : %x; opcode : %x; first_op : %x; second_op : %x; dest_reg : %x; iv : %x", ivf,opcode, first_op, second_op, dest_reg, iv);
+    }
+    
+    
+  //}
+  
 }
 
-void execute(){
-  printf("--- Execute begin ---\n");
-  
-  printf("--- Execute end ---\n");
+void execute(uint32_t* decoded_instr, long* registeries){
+
 }
 
 
@@ -221,37 +249,39 @@ void core(char* code , char* state, int verbose){
   unsigned int* cptr_size = &code_size;
   unsigned int state_size = 0;
   unsigned int* sptr_size = &state_size;
-
+  //
+  uint32_t current_instr;
+  
   //Retrieve code file content and update size
   uint32_t * int_instr = codeFileHandler(code, cptr_size);
   //printf("%x\n",int_instr[1]);
   
   //Retrieve state file content and initialize registers
-  unsigned long* registeries = stateFileHandler(state, sptr_size);
+  long* registeries = stateFileHandler(state, sptr_size);
   //printf("%lx\n",registeries[15]);
   while (*ptr_pc != *cptr_size ){
-    if (verbose == 1){
-      printf("Instruction %ld | Fetch :", *ptr_pc);
-    }
-    fetch(int_instr[*ptr_pc],verbose,ptr_pc,ptr_c1,ptr_c2);
-    if (verbose == 1){
+    uint32_t* decoded_instr;
+    if (verbose == 1)
+      printf("Fetch :");
+    current_instr = fetch(int_instr[*ptr_pc],verbose,ptr_pc,ptr_c1,ptr_c2);
+    if (verbose == 1)
       printf("\n");
-    }
+    if (verbose == 1)
+      printf("Decode :");
+    decode(current_instr,verbose, decoded_instr);
+    if (verbose == 1)
+      printf("\n");
+    if (verbose == 1)
+      printf("Execute :");
+    execute(decoded_instr,registeries);
+    if (verbose == 1)
+      printf("\n---\n");
   }
-
+  free(registeries);
+  free(int_instr);
 }
 
-int isInArray(char *arr[],char *x, int arrLen){
-  int isElementPresent = 0;
-     
-  for (int i = 0; i < arrLen; i++) {
-      if (strcmp(arr[i],x)==0) {
-          isElementPresent = 1;
-          break;
-      }
-  }
-  return isElementPresent;
-}
+
 
 int main(int argc, char *argv[])
 {
@@ -264,7 +294,7 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1],"-v")==0) {
       // Check if files exist
       if ((access(argv[2],F_OK) == 0) && (access(argv[3],F_OK) == 0)){
-        printf("----\nStarting C program with verbose mode...\n");
+        printf("----\nStarting C program with verbose mode...\n---\n");
         core(argv[2],argv[3],1);
       } else {
         printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
