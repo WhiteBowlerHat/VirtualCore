@@ -37,7 +37,7 @@ dict_branch = {"B":8,
                "BLE":11,
                "BGE":12,
                "BL":13,
-               "BG":14,}
+               "BG":14}
 
 def instr_handler_op(iv,dest_r,s_op,f_op,op,ivf):
     binary = 0
