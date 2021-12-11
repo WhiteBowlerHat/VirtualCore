@@ -1,0 +1,3 @@
+ADD r1 r1 1
+CMP r1 255
+BNE -2

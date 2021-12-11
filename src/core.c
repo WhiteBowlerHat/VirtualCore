@@ -296,7 +296,7 @@ void core(char* code , char* state, int verbose){
   //Declare compare memory values
   long c1 = 0;
   long * ptr_c1 = &c1;
-  long c2 = 1;
+  long c2 = 0;
   long * ptr_c2 = &c2;
   //Declare size for file contents
   unsigned int code_size = 0;
