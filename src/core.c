@@ -361,7 +361,7 @@ int main(int argc, char *argv[])
       if ((access(argv[2],F_OK) == 0) && (access(argv[3],F_OK) == 0)){
         printf("-------------------------\nVIRTUAL CORE RUNNING...\n-------------------------\n");
         printf("     _----------_,\n    ,\"__         _-:, \n   /    \"\"--_--\"\"...:\\\n  /         |.........\\\n /          |..........\\\n/,         _'_........./:\n! -,    _-\"   \"-_... ,;;:\n\\   -_-\"         \"-_/;;;;\n \\   \\             /;;;;'\n  \\   \\           /;;;;\n   '.  \\         /;;;'\n     \"-_\\_______/;;'\n");
-        printf("VERBOSE : ENABLED\n");
+        printf("-------------------------\nVERBOSE : ENABLED\n");
         core(argv[2],argv[3],1);
       } else {
         printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
