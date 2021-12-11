@@ -81,7 +81,7 @@ uint32_t countlines(FILE *file) {
 }
 
 
-long* stateFileHandler(char* file, unsigned int* ptr){
+long long* stateFileHandler(char* file, unsigned int* ptr){
   FILE * fp;
   char * line = NULL;
   
@@ -90,14 +90,14 @@ long* stateFileHandler(char* file, unsigned int* ptr){
   int length=0;
   int j=0;
   char *subString;
-  long* res;
+  long long* res;
 
   fp = fopen(file, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
   
   length = countlines(fp);
-  res = (long*) malloc (length*sizeof(long));
+  res = (long long*) malloc (length*sizeof(long long));
   *ptr=length;
  
   while ((read = getline(&line, &len, fp)) != -1) { 
@@ -113,7 +113,7 @@ long* stateFileHandler(char* file, unsigned int* ptr){
   printf("Length  = %d\n", *ptr);
   printf("Inital state - Registeries : [" );
     for (int i =0 ; i<*ptr; i++){
-      printf("r%d=%lx; ", i, res[i]);
+      printf("r%d=%llx; ", i, res[i]);
     }
     printf("]\n---\n");
   return res;
@@ -224,7 +224,7 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
   
 }
     
-void execute(uint32_t* decoded_instr, long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
+void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
   long temp;
   
   if (decoded_instr[0] == 0 ){
@@ -268,10 +268,12 @@ void execute(uint32_t* decoded_instr, long* registeries, long* carry, long* c1, 
           registeries[decoded_instr[4]] = temp;
           break;
       case 9: //LSH
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] << temp;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] << 8;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] | temp;
           break;
       case 10: //RSH
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] >> temp;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] >> 8;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] | temp;
           break;
       default :
           registeries[decoded_instr[4]] = registeries[decoded_instr[4]];
@@ -282,7 +284,7 @@ void execute(uint32_t* decoded_instr, long* registeries, long* carry, long* c1, 
   if (verbose ==1) {
     printf("\n   -Carry = %ld \n   -Registeries : [",*carry);
     for (int i =0 ; i<*sptr_size; i++){
-      printf("r%d=%lx ;", i, registeries[i]);
+      printf("r%d=%llx ;", i, registeries[i]);
     }
     printf("]\n   -C1 = %ld ; C2 = %ld\n", *c1, *c2);
   }
@@ -313,7 +315,7 @@ void core(char* code , char* state, int verbose){
   //printf("%x\n",int_instr[1]);
   
   //Retrieve state file content and initialize registers
-  long* registeries = stateFileHandler(state, sptr_size);
+  long long* registeries = stateFileHandler(state, sptr_size);
   
   uint32_t* decoded_instr;
   decoded_instr = (uint32_t*) calloc(7,sizeof(uint32_t)); 
@@ -337,7 +339,7 @@ void core(char* code , char* state, int verbose){
   }
   printf("Final state of registeries :\n");
   for (int i =0 ; i<*sptr_size; i++){
-    printf("r%d=%lx \n", i, registeries[i]);
+    printf("r%d=%llx \n", i, registeries[i]);
   }
     printf("\n");
   free(registeries);
