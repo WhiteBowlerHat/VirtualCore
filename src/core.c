@@ -110,8 +110,8 @@ long long* stateFileHandler(char* file, unsigned int* ptr){
       j=j+1;
     
   }
-  printf("Length  = %d\n", *ptr);
-  printf("Inital state - Registeries : [" );
+  printf("NUMBER OF REGISTERIES LOADED  : %d\n", *ptr);
+  printf("INITIAL STATE [" );
     for (int i =0 ; i<*ptr; i++){
       printf("r%d=%llx; ", i, res[i]);
     }
@@ -359,7 +359,9 @@ int main(int argc, char *argv[])
     if (strcmp(argv[1],"-v")==0) {
       // Check if files exist
       if ((access(argv[2],F_OK) == 0) && (access(argv[3],F_OK) == 0)){
-        printf("----\nStarting C program with verbose mode...\n---\n");
+        printf("-------------------------\nVIRTUAL CORE RUNNING...\n-------------------------\n");
+        printf("     _----------_,\n    ,\"__         _-:, \n   /    \"\"--_--\"\"...:\\\n  /         |.........\\\n /          |..........\\\n/,         _'_........./:\n! -,    _-\"   \"-_... ,;;:\n\\   -_-\"         \"-_/;;;;\n \\   \\             /;;;;'\n  \\   \\           /;;;;\n   '.  \\         /;;;'\n     \"-_\\_______/;;'\n");
+        printf("VERBOSE : ENABLED\n");
         core(argv[2],argv[3],1);
       } else {
         printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
@@ -370,7 +372,9 @@ int main(int argc, char *argv[])
   } else if (argc==3){
     // Check if files exist
     if ((access(argv[1],F_OK) == 0) && (access(argv[2],F_OK) == 0)){
-      printf("----\nStarting C program...\n");
+      printf("-------------------------\nVIRTUAL CORE RUNNING...\n-------------------------\n");
+      printf("     _----------_,\n    ,\"__         _-:, \n   /    \"\"--_--\"\"...:\\\n  /         |.........\\\n /          |..........\\\n/,         _'_........./:\n! -,    _-\"   \"-_... ,;;:\n\\   -_-\"         \"-_/;;;;\n \\   \\             /;;;;'\n  \\   \\           /;;;;\n   '.  \\         /;;;'\n     \"-_\\_______/;;'\n");
+      printf("-------------------------\nVERBOSE : DISABLED\n");
       core(argv[1],argv[2],0);
     } else {
       printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[1],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist" );
