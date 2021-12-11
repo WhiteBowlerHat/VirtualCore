@@ -12,6 +12,7 @@
 #include <string.h>
 //#include <core.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <math.h>
 #include <inttypes.h>
 
@@ -64,6 +65,21 @@ int digit_to_int(char d)
  return (int) strtol(str, NULL, 10);
 }
 
+uint32_t countlines(FILE *file) {
+  uint32_t lines = 0;
+  int32_t c;
+  int32_t last = '\n';
+  while (EOF != (c = fgetc(file))) {
+    if (c == '\n' && last != '\n') {
+      ++lines;
+    }
+    last = c;
+  }
+  /* Reset the file pointer to the start of the file */
+  rewind(file);
+  return lines;
+}
+
 
 long* stateFileHandler(char* file, unsigned int* ptr){
   FILE * fp;
@@ -79,60 +95,36 @@ long* stateFileHandler(char* file, unsigned int* ptr){
   fp = fopen(file, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
-  //Retrieve length
-  int ch=0;
-  int lines=0;
-  while(!feof(fp))
-  {
-    ch = fgetc(fp);
-    if(ch == '\n')
-    {
-      length++;
-    }
-  }
-  //Update size
-  *ptr = length;
-  printf("%d", length);
+  
+  length = countlines(fp);
   res = (long*) malloc (length*sizeof(long));
+  *ptr=length;
  
   while ((read = getline(&line, &len, fp)) != -1) { 
-    if (line[0]=='r'){
-      if (line[2]=='='){
-        int k=digit_to_int(line[1]);
-        //printf("Retrieved line of length %zu:\n", read);
-        //printf("%s",line);
-        if (k>-1 || k<10){
-          char linex[len];
-          strcpy(linex, line);
-          subString = strtok(linex,"x"); // find the x
-          subString = strtok(NULL,"\n");   // find the \n
-          res[j] = (int)strtol(subString, NULL, 16);
+    /*if (line[2]=='='){
+      int k=digit_to_int(line[1]);
+*/
+      char linex[len];
+      strcpy(linex, line);
+      subString = strtok(linex,"x"); // find the x
+      subString = strtok(NULL,"\n");   // find the \n
+      res[j] = (int)strtol(subString, NULL, 16);
+    // printf("v=%lx\n", res[j]);
+      j=j+1;
+    /* } else if (line[3]=='='){
+        
         // printf("v=%lx\n", res[j]);
-          j=j+1;
-        }
-      } else if (line[3]=='='){
-        int k=digit_to_int(line[1]);
-        //printf("Retrieved line of length %zu:\n", read);
-        //printf("%s",line);
-        if (k>-1 || k<10){
-          char linex[len];
-          strcpy(linex, line);
-          subString = strtok(linex,"x"); // find the x
-          subString = strtok(NULL,"\n");   // find the \n
-          res[j] = (int)strtol(subString, NULL, 16);
-         // printf("v=%lx\n", res[j]);
-          j=j+1;
-        }
-      }
+        j=j+1;
+
     } else {
       //printf("Retrieved line of length %zu:\n", read);
       //printf("%d\n", digit_to_int(line[1])*10+digit_to_int(line[2]));
-    }
+    }*/
     
   }
-  
+  printf("Length  = %d\n", *ptr);
   printf("Registeries : [" );
-    for (int i =0 ; i<=length; i++){
+    for (int i =0 ; i<*ptr; i++){
       printf("r%d=%lx; ", i, res[i]);
     }
     printf("]\n");
