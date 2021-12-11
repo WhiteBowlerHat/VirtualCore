@@ -101,33 +101,21 @@ long* stateFileHandler(char* file, unsigned int* ptr){
   *ptr=length;
  
   while ((read = getline(&line, &len, fp)) != -1) { 
-    /*if (line[2]=='='){
-      int k=digit_to_int(line[1]);
-*/
+
       char linex[len];
       strcpy(linex, line);
       subString = strtok(linex,"x"); // find the x
       subString = strtok(NULL,"\n");   // find the \n
       res[j] = (int)strtol(subString, NULL, 16);
-    // printf("v=%lx\n", res[j]);
       j=j+1;
-    /* } else if (line[3]=='='){
-        
-        // printf("v=%lx\n", res[j]);
-        j=j+1;
-
-    } else {
-      //printf("Retrieved line of length %zu:\n", read);
-      //printf("%d\n", digit_to_int(line[1])*10+digit_to_int(line[2]));
-    }*/
     
   }
   printf("Length  = %d\n", *ptr);
-  printf("Registeries : [" );
+  printf("Inital state - Registeries : [" );
     for (int i =0 ; i<*ptr; i++){
       printf("r%d=%lx; ", i, res[i]);
     }
-    printf("]\n");
+    printf("]\n---\n");
   return res;
   
   fclose(fp);
@@ -204,11 +192,11 @@ uint32_t fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
 void decode(uint32_t instr, int verbose, uint32_t* arr){
   uint32_t bcc = (instr & 0xf0000000)/ 0x10000000;
   uint32_t off = (instr & 0x07ffffff);
-  uint32_t ivf = (instr & 0x01000000) /1000000;
-  uint32_t opcode = (instr & 0x00f00000) /100000;
-  uint32_t first_op = (instr & 0x000f0000) /10000;
-  uint32_t second_op = (instr & 0x0000f000) /1000;
-  uint32_t dest_reg = (instr & 0x00000f00) /100;
+  uint32_t ivf = (instr & 0x01000000)/0x1000000 ;
+  uint32_t opcode = (instr & 0x00f00000) /0x100000;
+  uint32_t first_op = (instr & 0x000f0000) /0x10000;
+  uint32_t second_op = (instr & 0x0000f000) /0x1000;
+  uint32_t dest_reg = (instr & 0x00000f00) /0x100;
   uint32_t iv = (instr & 0x000000ff);
   /*if (bcc != 0) {
     arr = (uint32_t*) calloc(6,sizeof(uint32_t));
@@ -216,7 +204,7 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
     if (verbose == 1)
     printf("BCC : %x; Offset %x", bcc, off);
   } else {*/
-    arr = (uint32_t*) calloc(8,sizeof(uint32_t)); 
+    
     arr[0] = ivf;
     arr[1] = opcode;
     arr[2] = first_op;
@@ -236,45 +224,68 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
   
 }
     
-void execute(uint32_t* decoded_instr, long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size){
+void execute(uint32_t* decoded_instr, long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
   long temp;
   
-  /*if (decoded_instr[0] == 0 ){
-    temp = registeries[decoded_instr[3]];
+  if (decoded_instr[0] == 0 ){
+    temp = decoded_instr[3];
   } else {
-    temp = registeries[decoded_instr[5]];
+    temp = decoded_instr[5];
   }
-  if (decoded_instr[6] == 0){
-      if (decoded_instr[1]==0) {
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] && temp);
-      } else if (decoded_instr[1] == 1 ) {
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] || temp);
-      } else if (decoded_instr[1] == 2 ) {
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] || temp);
-      } else if (decoded_instr[1] == 3 ) {
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] + temp);
-      } else if (decoded_instr[1] == 4 ) {
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] + temp + *carry);
-      } else if (decoded_instr[1] == 5 ) {
-         *c1=registeries[decoded_instr[2]];
-         *c2=temp;
-      } else if (decoded_instr[1] == 6 ){
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] - temp);
-      } else if (decoded_instr[1] == 7 ){
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] - temp + *carry -1);
-      } else if (decoded_instr[1] == 8 ){
-         registeries[decoded_instr[5]]= registeries[decoded_instr[2]];
-      } else if (decoded_instr[1] == 9 ){
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] << temp);
-      } else if (decoded_instr[1] == 10 ){
-         registeries[decoded_instr[5]]=(registeries[decoded_instr[2]] >> temp);
-      }
-    } 
-    printf("Registeries : [" );
-    for (int i =0 ; i<=*sptr_size; i++){
-      printf("r%d :%lx ;", i, registeries[i]);
+
+  
+  if (decoded_instr[6] == 0) {
+    //printf("OPCODE : %x | ",decoded_instr[1]);
+    switch(decoded_instr[1])
+    {
+      case 0: //AND
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] && temp;
+          break;
+      case 1: //OR
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] || temp;
+          break;
+      case 2: //XOR
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] ^ temp;
+          break;
+      case 3: //ADD
+          //printf("first_op r%d=%lx |", decoded_instr[4], registeries[decoded_instr[4]]);
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] + temp;
+          break;
+      case 4: //ADC
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] + temp + *carry;
+          break;
+      case 5: //CMP
+          *c1 = registeries[decoded_instr[2]];
+          *c2 = temp;
+          break;
+      case 6: //SUB
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] - temp;
+          break;
+      case 7: //SBC
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] - temp + *carry -1;
+          break;
+      case 8: //MOV
+          registeries[decoded_instr[4]] = temp;
+          break;
+      case 9: //LSH
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] << temp;
+          break;
+      case 10: //RSH
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] >> temp;
+          break;
+      default :
+          registeries[decoded_instr[4]] = registeries[decoded_instr[4]];
+          break;
     }
-    printf("]\n");*/
+  }
+  
+  if (verbose ==1) {
+    printf("\n   -Carry = %ld \n   -Registeries : [",*carry);
+    for (int i =0 ; i<*sptr_size; i++){
+      printf("r%d=%lx ;", i, registeries[i]);
+    }
+    printf("]\n   -C1 = %ld ; C2 = %ld\n", *c1, *c2);
+  }
 }
 
 
@@ -303,9 +314,11 @@ void core(char* code , char* state, int verbose){
   
   //Retrieve state file content and initialize registers
   long* registeries = stateFileHandler(state, sptr_size);
+  
   uint32_t* decoded_instr;
+  decoded_instr = (uint32_t*) calloc(7,sizeof(uint32_t)); 
   //printf("%lx\n",registeries[15]);
-  while (*ptr_pc != *cptr_size-1 ){
+  while (*ptr_pc != *cptr_size ){
     if (verbose == 1)
       printf("Fetch :");
     current_instr = fetch(int_instr[*ptr_pc],verbose,ptr_pc,ptr_c1,ptr_c2);
@@ -318,10 +331,15 @@ void core(char* code , char* state, int verbose){
       printf("\n");
     if (verbose == 1)
       printf("Execute :");
-    execute(decoded_instr,registeries,ptr_carry, ptr_c1,ptr_c2,sptr_size);
+    execute(decoded_instr,registeries,ptr_carry, ptr_c1,ptr_c2,sptr_size, verbose);
     if (verbose == 1)
       printf("\n---\n");
   }
+  printf("Final state of registeries :\n");
+  for (int i =0 ; i<*sptr_size; i++){
+    printf("r%d=%lx \n", i, registeries[i]);
+  }
+    printf("\n");
   free(registeries);
   free(int_instr);
 }

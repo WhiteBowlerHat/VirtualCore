@@ -44,8 +44,8 @@ def instr_handler_op(iv,dest_r,s_op,f_op,op,ivf):
     if iv > 255:
         return("Error Immediate Value too high")
     binary = iv << 0 | dest_r << 8 | s_op << 12 | f_op << 16 | op << 20 | ivf << 24
-    print(bin(binary))
-    print(binary)
+    #print(bin(binary))
+    #print(binary)
     return struct.pack('>I',binary)
 
 def instr_handler_branch(offset,bcc):
@@ -57,8 +57,8 @@ def instr_handler_branch(offset,bcc):
     if abs(offset) > 134217727:
         return("Error Offset too high for branch")
     binary = offset << 0 | signe << 27 | bcc << 28
-    print(bin(binary))
-    print(binary)
+    #print(bin(binary))
+    #print(binary)
     return struct.pack('>I',binary)
 
 def main(filename):
@@ -71,7 +71,7 @@ def main(filename):
     for i in range(len(tab)):
         s = tab[i].replace(",","").split()
         if s[0].upper() in dict_opcode:
-            print(s)
+            #print(s)
             op = dict_opcode[s[0].upper()]
             if op == 0 or op == 1 or op == 2 or op ==3 or op ==4 or op ==6 or op ==7 or op ==9 or op ==10:
                 if not(s[3].isnumeric()):
@@ -89,8 +89,8 @@ def main(filename):
                 else:
                     instr = instr_handler_op(int(s[2]),dict_register[s[1]],0,0,op,1)
         elif s[0].upper() in dict_branch:
-            print(s)
-            print(int(s[1]))
+            #print(s)
+            #print(int(s[1]))
             instr = instr_handler_branch(int(s[1]), dict_branch[s[0]])
         if isinstance(instr, str):
             return(print(instr))
