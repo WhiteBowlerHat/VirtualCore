@@ -228,7 +228,7 @@ void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long*
   long temp;
   
   if (decoded_instr[0] == 0 ){
-    temp = decoded_instr[3];
+    temp = registeries[decoded_instr[3]];
   } else {
     temp = decoded_instr[5];
   }
@@ -249,6 +249,7 @@ void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long*
           break;
       case 3: //ADD
           //printf("first_op r%d=%lx |", decoded_instr[4], registeries[decoded_instr[4]]);
+          printf("r1 = %lx | r0 = %llx  | r0 + r1 = %llx\n",temp,registeries[decoded_instr[2]], registeries[decoded_instr[2]] + temp );
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] + temp;
           break;
       case 4: //ADC
