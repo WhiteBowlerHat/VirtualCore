@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <math.h>
 #include <inttypes.h>
+#include <limits.h>
 
 uint32_t SwapEndian(uint32_t num){
   uint32_t b0,b1,b2,b3;
@@ -81,7 +82,7 @@ uint32_t countlines(FILE *file) {
 }
 
 
-long long* stateFileHandler(char* file, unsigned int* ptr){
+__uint128_t* stateFileHandler(char* file, unsigned int* ptr){
   FILE * fp;
   char * line = NULL;
   
@@ -90,14 +91,14 @@ long long* stateFileHandler(char* file, unsigned int* ptr){
   int length=0;
   int j=0;
   char *subString;
-  long long* res;
+  __uint128_t* res;
 
   fp = fopen(file, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
   
   length = countlines(fp);
-  res = (long long*) malloc (length*sizeof(long long));
+  res = (__uint128_t*) malloc (length*sizeof(__uint128_t));
   *ptr=length;
  
   while ((read = getline(&line, &len, fp)) != -1) { 
@@ -106,14 +107,16 @@ long long* stateFileHandler(char* file, unsigned int* ptr){
       strcpy(linex, line);
       subString = strtok(linex,"x"); // find the x
       subString = strtok(NULL,"\n");   // find the \n
-      res[j] = (int)strtol(subString, NULL, 16);
+      //printf("\nString : '%s'\n   Hex :  %llx\n",subString, (__uint128_t)strtoull(subString, NULL, 16));
+      res[j] = (__uint128_t)strtoull(subString, NULL, 16);
       j=j+1;
     
   }
   printf("NUMBER OF REGISTERIES LOADED  : %d\n", *ptr);
   printf("INITIAL STATE [" );
     for (int i =0 ; i<*ptr; i++){
-      printf("r%d=%llx; ", i, res[i]);
+      __uint128_t p = res[i];
+      printf("r%d=%016lx%016lx\n", i, (uint64_t) (p >> 64), (uint64_t) p);
     }
     printf("]\n---\n");
   return res;
@@ -224,8 +227,8 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
   
 }
     
-void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
-  long temp;
+void execute(uint32_t* decoded_instr, __uint128_t* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
+  __uint128_t temp;
   
   if (decoded_instr[0] == 0 ){
     temp = registeries[decoded_instr[3]];
@@ -248,18 +251,22 @@ void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long*
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] ^ temp;
           break;
       case 3: //ADD
-          //printf("first_op r%d=%lx |", decoded_instr[4], registeries[decoded_instr[4]]);
-          printf("r1 = %lx | r0 = %llx  | r0 + r1 = %llx\n",temp,registeries[decoded_instr[2]], registeries[decoded_instr[2]] + temp );
+            //printf("first_op r%d=%llx | temp = %llx", decoded_instr[4], registeries[decoded_instr[2]], temp);
+          if ((temp > 0) && (registeries[decoded_instr[2]] > 0xfffffffffffffff - temp))// if overflow
+            *carry = 1;
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] + temp;
           break;
       case 4: //ADC
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] + temp + *carry;
+          *carry = 0;
           break;
       case 5: //CMP
           *c1 = registeries[decoded_instr[2]];
           *c2 = temp;
           break;
       case 6: //SUB
+          if ((temp < 0) && (registeries[decoded_instr[2]] > 0xffffffffffffffffffffffffffff + temp))
+            *carry = 1;
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] - temp;
           break;
       case 7: //SBC
@@ -283,7 +290,8 @@ void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long*
   if (verbose ==1) {
     printf("\n   -Carry = %ld \n   -Registeries : [",*carry);
     for (int i =0 ; i<*sptr_size; i++){
-      printf("r%d=%llx ;", i, registeries[i]);
+      __uint128_t p = registeries[i];
+      printf("r%d=%016lx%016lx;", i, (uint64_t) (p >> 64), (uint64_t) p);
     }
     printf("]\n   -C1 = %ld ; C2 = %ld\n", *c1, *c2);
   }
@@ -314,7 +322,7 @@ void core(char* code , char* state, int verbose){
   //printf("%x\n",int_instr[1]);
   
   //Retrieve state file content and initialize registers
-  long long* registeries = stateFileHandler(state, sptr_size);
+  __uint128_t* registeries = stateFileHandler(state, sptr_size);
   
   uint32_t* decoded_instr;
   decoded_instr = (uint32_t*) calloc(7,sizeof(uint32_t)); 
@@ -337,8 +345,10 @@ void core(char* code , char* state, int verbose){
       printf("\n---\n");
   }
   printf("Final state of registeries :\n");
+  
   for (int i =0 ; i<*sptr_size; i++){
-    printf("r%d=%llx \n", i, registeries[i]);
+    __uint128_t p = registeries[i];
+    printf("r%d=%016lx%016lx\n", i, (uint64_t) (p >> 64), (uint64_t) p);
   }
     printf("\n");
   free(registeries);
