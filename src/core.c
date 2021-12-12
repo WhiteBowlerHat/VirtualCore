@@ -239,10 +239,10 @@ void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long*
     switch(decoded_instr[1])
     {
       case 0: //AND
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] && temp;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] & temp;
           break;
       case 1: //OR
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] || temp;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] | temp;
           break;
       case 2: //XOR
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] ^ temp;
@@ -268,12 +268,10 @@ void execute(uint32_t* decoded_instr, long long* registeries, long* carry, long*
           registeries[decoded_instr[4]] = temp;
           break;
       case 9: //LSH
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] << 8;
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] | temp;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] << temp;
           break;
       case 10: //RSH
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] >> 8;
-          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] | temp;
+          registeries[decoded_instr[4]] = registeries[decoded_instr[2]] >> temp;
           break;
       default :
           registeries[decoded_instr[4]] = registeries[decoded_instr[4]];
