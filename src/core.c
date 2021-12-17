@@ -2,7 +2,7 @@
 
    Example of Virtual Core 
    Authors:  Bilal Taalbi & Maxime Rouhier
-   Last update : 09/12/2021
+   Last update : 17/12/2021
  
 */
 #define _GNU_SOURCE

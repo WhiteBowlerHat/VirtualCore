@@ -1,6 +1,6 @@
 .\" Manpage for core.
 .\" Contact rouhiermax@cy-tech.fr or taalbibila@cy-tech.fr to correct errors or typos.
-.TH core 0 "05 Dec 2021" "1.0" "core man page"
+.TH core 0 "17 Dec 2021" "1.0" "core man page"
 .SH NAME
 core \- example of virtual core 
 .SH SYNOPSIS
