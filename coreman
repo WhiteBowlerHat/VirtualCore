@@ -15,7 +15,7 @@ core \- example of virtual core
 .I state_file
 .SH DESCRIPTION
 .B core
-is an executable file able to run an up-to-date 64 bits Debian distribution. The core is composed of three main functions
+is an executable file able to run on an up-to-date 64 bits Debian distribution. The core is composed of three main functions
 .B fetch
 ,
 .B decode
@@ -32,6 +32,14 @@ decode the different parts from the instruction.
 .RE
 .B Execute
 realize the operations. 
+.RE
+
+.RE
+We provided a python3 compiler that work with an assembly-like program. (compiler.py)
+.RE
+Note that the compiler will not work if you dont put spaces between the instructions.
+.RE
+E.g. "ADD r1, r2, 3" 
 .SH OPTIONS
 .IP -h 
 Display this manual.
@@ -40,15 +48,15 @@ Enable verbose mode.
 .SH FILES
 .I code_file
 .RS 
-It specifies the code to be executed by the core (MANDATORY)
+It specifies the code (binary file) to be executed by the core (MANDATORY)
 .RE
 .I state_file
 .RS 
 It specifies the initial state of the internal registers (MANDATORY)
 .SH BUGS
-No known bugs.
+No error handling with the state file (value must increase from 0 to ... step by step). Working with the 3 first programs.
 .SH EXAMPLE
- ./core -v code state
+ (python3 compiler.py instructions.s && make &&) ./core code state.txt
 .SH SEE MORE
 consignes.pdf
 .SH AUTHORS

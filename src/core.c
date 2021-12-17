@@ -17,6 +17,8 @@
 #include <inttypes.h>
 #include <limits.h>
 
+
+//Convert little endian to big endian (and reverse)
 uint32_t SwapEndian(uint32_t num){
   uint32_t b0,b1,b2,b3;
   uint32_t res;
@@ -29,6 +31,7 @@ uint32_t SwapEndian(uint32_t num){
   return res = b0 | b1 | b2 | b3;
 }
 
+//Check if a char is in array
 int isInArray(char *arr[],char *x, int arrLen){
   int isElementPresent = 0;
      
@@ -41,6 +44,7 @@ int isInArray(char *arr[],char *x, int arrLen){
   return isElementPresent;
 }
 
+// pow() function for long type
 long ipow(long base, long exp)
 {
     long result = 1;
@@ -53,11 +57,10 @@ long ipow(long base, long exp)
             break;
         base *= base;
     }
-
     return result;
 }
 
-
+//Convert Hex char to Integer
 int digit_to_int(char d)
 {
  char str[2];
@@ -66,6 +69,9 @@ int digit_to_int(char d)
  return (int) strtol(str, NULL, 10);
 }
 
+
+//Count the number of lines in a file
+// TO DO: fix empty lines
 uint32_t countlines(FILE *file) {
   uint32_t lines = 0;
   int32_t c;
@@ -82,40 +88,41 @@ uint32_t countlines(FILE *file) {
 }
 
 
-unsigned long long* stateFileHandler(char* file, unsigned int* ptr){
+uint64_t* stateFileHandler(char* file, unsigned int* ptr){
+  //Variables intitalization
   FILE * fp;
   char * line = NULL;
-  
   size_t len = 0;
   ssize_t read;
   int length=0;
   int j=0;
   char *subString;
-  unsigned long long* res;
+  uint64_t* res;
 
+  //Opening file
   fp = fopen(file, "r");
   if (fp == NULL)
       exit(EXIT_FAILURE);
   
+  //retrieve length -> create table of registeries and PC with the length and 
   length = countlines(fp);
-  res = (unsigned long long*) malloc (length*sizeof(unsigned long long));
+  res = (uint64_t*) malloc (length*sizeof(uint64_t));
   *ptr=length;
  
+  //read the file and update registeries value
   while ((read = getline(&line, &len, fp)) != -1) { 
-
       char linex[len];
       strcpy(linex, line);
       subString = strtok(linex,"x"); // find the x
       subString = strtok(NULL,"\n");   // find the \n
-      //printf("\nString : '%s'\n   Hex :  %llx\n",subString, (unsigned long long)strtoull(subString, NULL, 16));
-      res[j] = (unsigned long long)strtoull(subString, NULL, 16);
+      res[j] = (uint64_t)strtoull(subString, NULL, 16);
       j=j+1;
     
   }
   printf("NUMBER OF REGISTERIES LOADED  : %d\n", *ptr);
   printf("INITIAL STATE [" );
     for (int i =0 ; i<*ptr; i++){
-      unsigned long long p = res[i];
+      uint64_t p = res[i];
       printf("r%d=%016lx\n", i, (uint64_t) p);
     }
     printf("]\n---\n");
@@ -127,7 +134,7 @@ unsigned long long* stateFileHandler(char* file, unsigned int* ptr){
   exit(EXIT_SUCCESS);
 }
 
-
+//Reads the binary file where all the instructions are stored and put them in a 32 bits array
 uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   FILE *fp;
   //Declare type as 32 bits Integer
@@ -159,11 +166,11 @@ uint32_t * codeFileHandler(char* file, unsigned int* ptr){
   }
 }
 
+// This function read the instructions and update the program counter according to different
 uint32_t fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
-  //printf("%x\n",instr);
+
   uint8_t bcc = (instr & 0xf0000000)/ 0x10000000;
   long off = (instr & 0x07ffffff);
-  //off = off >> 21;
   uint8_t flag = (instr & 0x0f000000)/ 0x1000000;
 
   int n = flag>>3;
@@ -192,6 +199,7 @@ uint32_t fetch(uint32_t instr, int verbose, long* pc, long* c1, long* c2){
   return instr;
 }
 
+//This function decode an instructions and puts everything into an array
 void decode(uint32_t instr, int verbose, uint32_t* arr){
   uint32_t bcc = (instr & 0xf0000000)/ 0x10000000;
   uint32_t off = (instr & 0x07ffffff);
@@ -201,13 +209,6 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
   uint32_t second_op = (instr & 0x0000f000) /0x1000;
   uint32_t dest_reg = (instr & 0x00000f00) /0x100;
   uint32_t iv = (instr & 0x000000ff);
-  /*if (bcc != 0) {
-    arr = (uint32_t*) calloc(6,sizeof(uint32_t));
-    printf("ivf : %x; opcode : %x; first_op : %x; second_op : %x; dest_reg : %x; iv : %x", ivf,opcode, first_op, second_op, dest_reg, iv);
-    if (verbose == 1)
-    printf("BCC : %x; Offset %x", bcc, off);
-  } else {*/
-    
     arr[0] = ivf;
     arr[1] = opcode;
     arr[2] = first_op;
@@ -220,25 +221,22 @@ void decode(uint32_t instr, int verbose, uint32_t* arr){
       printf("BCC : %x; Offset %x", bcc, off);
     } else {
       printf("ivf : %x; opcode : %x; first_op : %x; second_op : %x; dest_reg : %x; iv : %x", ivf,opcode, first_op, second_op, dest_reg, iv);
-    }
-    
-    
-  //}
-  
+    } 
 }
-    
-void execute(uint32_t* decoded_instr, unsigned long long* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
-  unsigned long long temp;
+
+//This function execute the instruction and update the registeries value according to multiple operations 
+//See the array above to see which index has which value
+void execute(uint32_t* decoded_instr, uint64_t* registeries, long* carry, long* c1, long* c2, unsigned int * sptr_size, int verbose){
+  uint64_t temp;
   
-  if (decoded_instr[0] == 0 ){
+  //Update the temp value according to the immediate value flag 
+  if (decoded_instr[0] == 0 ){// ivf =  decode_instr[0] (see above)
     temp = registeries[decoded_instr[3]];
   } else {
     temp = decoded_instr[5];
   }
 
-  
   if (decoded_instr[6] == 0) {
-    //printf("OPCODE : %x | ",decoded_instr[1]);
     switch(decoded_instr[1])
     {
       case 0: //AND
@@ -251,8 +249,7 @@ void execute(uint32_t* decoded_instr, unsigned long long* registeries, long* car
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] ^ temp;
           break;
       case 3: //ADD
-            //printf("first_op r%d=%llx | temp = %llx", decoded_instr[4], registeries[decoded_instr[2]], temp);
-          if ((temp > 0) && (registeries[decoded_instr[2]] > 0xffffffffffffffff - temp))// if overflow
+          if ((temp > 0) && (registeries[decoded_instr[2]] > 0xfffffffffffffff - temp))// if overflow
             *carry = 1;
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] + temp;
           break;
@@ -265,7 +262,7 @@ void execute(uint32_t* decoded_instr, unsigned long long* registeries, long* car
           *c2 = temp;
           break;
       case 6: //SUB
-          if ((temp < 0) && (registeries[decoded_instr[2]] > 0xffffffffffffffff + temp))
+          if ((temp < 0) && (registeries[decoded_instr[2]] > 0xfffffffffffffff + temp))
             *carry = 1;
           registeries[decoded_instr[4]] = registeries[decoded_instr[2]] - temp;
           break;
@@ -290,14 +287,15 @@ void execute(uint32_t* decoded_instr, unsigned long long* registeries, long* car
   if (verbose ==1) {
     printf("\n   -Carry = %ld \n   -Registeries : [",*carry);
     for (int i =0 ; i<*sptr_size; i++){
-      unsigned long long p = registeries[i];
+      uint64_t p = registeries[i];
       printf("r%d=%016lx;", i,(uint64_t) p);
     }
     printf("]\n   -C1 = %ld ; C2 = %ld\n", *c1, *c2);
   }
 }
 
-
+// Main function of the core 
+// It initialize necessary variables and go through fetch, decode and execute
 void core(char* code , char* state, int verbose){
   //Declare PC
   long pc = 0;
@@ -319,14 +317,12 @@ void core(char* code , char* state, int verbose){
   
   //Retrieve code file content and update size
   uint32_t * int_instr = codeFileHandler(code, cptr_size);
-  //printf("%x\n",int_instr[1]);
   
   //Retrieve state file content and initialize registers
-  unsigned long long* registeries = stateFileHandler(state, sptr_size);
+  uint64_t* registeries = stateFileHandler(state, sptr_size);
   
   uint32_t* decoded_instr;
   decoded_instr = (uint32_t*) calloc(7,sizeof(uint32_t)); 
-  //printf("%lx\n",registeries[15]);
   while (*ptr_pc != *cptr_size ){
     if (verbose == 1)
       printf("Fetch :");
@@ -344,10 +340,10 @@ void core(char* code , char* state, int verbose){
     if (verbose == 1)
       printf("\n---\n");
   }
+
   printf("Final state of registeries :\n");
-  
   for (int i =0 ; i<*sptr_size; i++){
-    unsigned long long p = registeries[i];
+    uint64_t p = registeries[i];
     printf("r%d=%016lx\n", i, (uint64_t) p);
   }
     printf("\n");
@@ -356,12 +352,12 @@ void core(char* code , char* state, int verbose){
 }
 
 
-
+//Handle the user interactions when they start the program
+//Provide help if needed "-h"
 int main(int argc, char *argv[])
 {
-  //Handle the user interactions when they start the program
   if (argc==1){
-    printf("Invalid usage of \"./core\".\nTry \"./core -h\" for more information \n");
+    printf("Invalid usage of \"./core\".\nTry \"./core -h\" for more information \n\nIn order to see the help command your computer needs to be able to run \"man\"\n");
   } else if (isInArray(argv,"-h", argc)){
     system("man ./coreman");
   } else if (argc==4){
@@ -376,7 +372,7 @@ int main(int argc, char *argv[])
         printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[3],F_OK) == 0) ? "Exists" : "Doesn't exist" );
       }
     } else {
-     printf("Invalid usage of \"./core\".\nTry \"./core -h\" for more information \n");
+     printf("Invalid usage of \"./core\".\nTry \"./core -h\" for more information \n\nIn order to see the help command your computer needs to be able to run \"man\"\n");
     }
   } else if (argc==3){
     // Check if files exist
@@ -389,7 +385,7 @@ int main(int argc, char *argv[])
       printf("One of the files does not exist.\n code file: %s \n state file: %s \n",(access(argv[1],F_OK) == 0) ? "Exists" : "Doesn't exist", (access(argv[2],F_OK) == 0) ? "Exists" : "Doesn't exist" );
     }
   } else {
-    printf("Invalid usage\nTry \"./core -h\" for more information. \n");
+    printf("Invalid usage\nTry \"./core -h\" for more information. \n\nIn order to see the help command your computer needs to be able to run \"man\"\n");
   }
 
   return EXIT_SUCCESS;

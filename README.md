@@ -1,2 +1,3 @@
 # VirtualCore
-Run : python3 compiler.py program1.s && make && ./core binary state.txt
+Help/details : ./core -h
+Run : python3 compiler.py init_test && make && ./core binary init_state
